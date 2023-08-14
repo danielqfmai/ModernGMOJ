@@ -1,4 +1,4 @@
-# ModernGMOJ v1.2
+# ModernGMOJ v1.3
 
 #### [更新日志](changelog.md)
 
