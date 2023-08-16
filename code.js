@@ -1,4 +1,4 @@
-// ==UserScript=
+// ==UserScript==
 // @name         ModernGMOJ
 // @version      1.3.1
 // @namespace    https://gmoj.net/
