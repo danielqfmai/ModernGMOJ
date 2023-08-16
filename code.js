@@ -1,46 +1,15 @@
-// ==UserScript==
+// ==UserScript=
 // @name         ModernGMOJ
-// @version      1.3
+// @version      1.3.1
 // @namespace    https://gmoj.net/
 // @match        https://gmoj.net/*
 // @icon         https://gmoj.net/favicon.ico
 // @grant        unsafeWindow
-// @run-at       document-body
+// @run-at       document-start
 // ==/UserScript==
 
 'use strict';
 
-set_page_content=function(selector, url, success) {
-    addRequest = {};
-    url = randomize(url);
-    $('.overlay').css({'z-index': '1000', 'display': 'block'});
-    $('.overlay').animate({opacity: '0.5'}, 250);
-    $.ajax({
-        type: "GET",
-        url: url,
-        success: function(data){
-            $(selector).hide();
-            $('.overlay').css({'z-index': '-1000', 'display': 'none'});
-            $('.overlay').animate({opacity: '0'}, 250);
-            $(selector).html(data);
-            var split_by_contest=document.location.href.split('#contest');
-            if (split_by_contest.length>=2&&split_by_contest[1]=='') {
-//                $('#contest_table>thead')[0].remove();
-                var tr=$('#contest_table tr');
-                for (var i=0; i<tr.length; i++) tr[i].children[7].remove();
-                for (var i=0; i<tr.length; i++) tr[i].children[4].remove();
-                for (var i=0; i<tr.length; i++) tr[i].children[2].remove();
-            }
-            $(selector).fadeIn(250);
-            if (success != void 0) success();
-        },
-        error: function(xhr, statusText, error){
-            $('.overlay').css({'z-index': '-1000', 'display': 'none'});
-            $('.overlay').animate({opacity: '0'}, 250);
-            $(selector).html('<div class="alert"><strong>Error: ' + ' ' + error + '</strong></div>');
-        }
-    });
-}
 function make_timer() {
     var li=document.createElement('li'),a=document.createElement('a');
     a.style.color='#000';
@@ -53,37 +22,73 @@ function make_timer() {
     setInterval("$('#timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);", 100);
 }
 
-$("#nav_task").remove();
-$("#nav_group").remove();
-$("#nav_ranklist").remove();
-$("#nav_admin").remove();
-$("#scroll_tip").remove();
-$('#copyleft').remove();
-setTimeout("$('#username>div')[0].remove()",300);
-document.body.appendChild($('#navigation')[0]);
+function remove_avatar() {
+    var avatar=$('#username>div>img');
+    if (avatar.length>0)
+        avatar[0].onerror=function(event){this.parentElement.remove();};
+}
 
-$('#nav_toggle').toggle(function() {
-        $('#navigation').animate({ left: '-200px', width: '0' }, 320);
-        $('#page_content').animate({ 'margin-left': '10px' }, 320);
-        $('#icon_nav_toggle').removeClass();
-        $('#icon_nav_toggle').addClass('icon-arrow-right');
-        },
-        function() {
-        $('#navigation').animate({ left: '0', width: '100px' }, 320);
-        $('#page_content').animate({ 'margin-left': '110px' }, 320);
-        $('#icon_nav_toggle').removeClass();
-        $('#icon_nav_toggle').addClass('icon-arrow-left');
+function contest_home_page() {
+    var split_by_contest=document.location.href.split('#contest');
+    if (split_by_contest.length<2||split_by_contest[1]!='') return;
+    var tr=$('#contest_table tr');
+    for (var i=0; i<tr.length; i++)
+        tr[i].children[7].remove(),
+            tr[i].children[4].remove(),
+            tr[i].children[2].remove();
+}
+
+var observer = new MutationObserver(function () {
+    try {
+        set_page_content=function(selector, url, success) {
+            addRequest = {};
+            url = randomize(url);
+            $('.overlay').css({'z-index': '1000', 'display': 'block'});
+            $('.overlay').animate({opacity: '0.5'}, 250);
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function(data){
+                    $(selector).hide();
+                    $('.overlay').css({'z-index': '-1000', 'display': 'none'});
+                    $('.overlay').animate({opacity: '0'}, 250);
+                    $(selector).html(data);
+                    remove_avatar();
+                    make_timer();
+                    $(` #nav_task, #nav_group, #nav_ranklist, #nav_admin,
+                    #scroll_tip,
+                    #copyleft`).remove();
+                    document.body.appendChild($('#navigation')[0]);
+                    $('#nav_toggle').toggle(function() {
+                        $('#navigation').animate({ left: '-200px', width: '0' }, 320);
+                        $('#page_content').animate({ 'margin-left': '10px' }, 320);
+                        $('#icon_nav_toggle').removeClass();
+                        $('#icon_nav_toggle').addClass('icon-arrow-right');
+                    }, function() {
+                        $('#navigation').animate({ left: '0', width: '100px' }, 320);
+                        $('#page_content').animate({ 'margin-left': '110px' }, 320);
+                        $('#icon_nav_toggle').removeClass();
+                        $('#icon_nav_toggle').addClass('icon-arrow-left');
+                    });
+                    $('#nav_toggle')[0].style.top='270px';
+                    $('#nav_toggle')[0].style.left='3px';
+                    contest_home_page();
+                    $(selector).fadeIn(250);
+                    if (success != void 0) success();
+                },
+                error: function(xhr, statusText, error){
+                    $('.overlay').css({'z-index': '-1000', 'display': 'none'});
+                    $('.overlay').animate({opacity: '0'}, 250);
+                    $(selector).html('<div class="alert"><strong>Error: ' + ' ' + error + '</strong></div>');
+                }
+            });
         }
-        );
+        observer.disconnect();
+    } catch(e) { }
+});
+observer.observe((document.head), { subtree: true, childList: true });
 
-//var hms = document.createElement('li');
-//$('#navigation')[0].appendChild(hms);
-//hms.style['text-align']='center';
-//setInterval(function() {hms.innerText=$('#server_time')[0].innerText.substr(16,8)}, 100);
-make_timer();
 
-$('#nav_toggle')[0].style.top='270px';
-$('#nav_toggle')[0].style.left='3px';
 var style = document.createElement('style');
 style.innerHTML=`
 legend {
@@ -145,8 +150,13 @@ legend {
     padding: 5px;
 }
 .table th, .table td {
+    border-top: initial;
+}
+.pagination ul>li>a, .pagination ul>li>span {
+    border: initial;
+}
+#contest_table th, #contest_table td {
     text-align: center;
     vertical-align: center;
-    border-top: initial;
 }`
 document.head.appendChild(style);
