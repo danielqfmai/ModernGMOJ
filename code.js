@@ -12,9 +12,9 @@
 
 function make_timer() {
     var li=document.createElement('li'),a=document.createElement('a');
-    a.style.color='#000';
-    a.style['font-size']='16px';
-    a.style['padding-left']='15px';
+    a.style.color='#0c3463';
+    a.style['font-size']='14px';
+    a.style['padding-left']='12px';
     a.id='timer';
     li.appendChild(a);
     li.className='nav_bar';
