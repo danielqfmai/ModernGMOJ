@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ModernGMOJ
-// @version      1.3.1
+// @version      1.4.2
 // @namespace    https://gmoj.net/
 // @match        https://gmoj.net/*
 // @icon         https://gmoj.net/favicon.ico
@@ -14,14 +14,12 @@ var big_timer_interval_id;
 function make_timer() {
     if ($('#timer').length==0) {
         var li=document.createElement('li'),a=document.createElement('a');
-//        a.style.color='#0c3463';
-//        a.style['font-size']='14px';
-//        a.style['padding-left']='12px';
         a.href='#timer';
         a.id='timer';
         li.appendChild(a);
         li.className='nav_bar';
         $('#navigation')[0].appendChild(li);
+        $('#timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);
         $('#timer').click( function() {
             $('#navigation li').removeClass('active');
             $(this).parent().addClass('active');
@@ -42,12 +40,12 @@ function sidebar() {
     #copyleft`).remove();
     document.body.appendChild($('#navigation')[0]);
     $('#nav_toggle').toggle(function() {
-            $('#navigation').animate({ left: '-200px', width: '0' }, 320);
+            $('#navigation').animate({ left: '-100px' }, 320);
             $('#page_content').animate({ 'margin-left': '10px' }, 320);
             $('#icon_nav_toggle').removeClass();
             $('#icon_nav_toggle').addClass('icon-arrow-right');
             }, function() {
-            $('#navigation').animate({ left: '0', width: '100px' }, 320);
+            $('#navigation').animate({ left: '0px' }, 320);
             $('#page_content').animate({ 'margin-left': '110px' }, 320);
             $('#icon_nav_toggle').removeClass();
             $('#icon_nav_toggle').addClass('icon-arrow-left');
@@ -73,28 +71,69 @@ function return_button() {
     }
 }
 
+function trigger(data) {
+    var a=$('#trigger');
+//    a.popover('destroy');
+    var x=`<div style="position: absolute; display: none;"><div style="
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 16px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            color: #333;
+            border-radius: 4px;
+            box-shadow: 0px 0px 3px rgba(0,0,0,0.2);">`
+        +data.replace(new RegExp('(Case [0-9]*<br />)*$'),'</div></div>');
+    a.each(function(){
+//        $.get('index.php/'+$(this).parent()[0].href.split('#')[1]+'?simple',function(data){
+        $(this)[0].innerHTML+=x;
+        $(this).parent()[0].removeAttribute('href');
+    });
+    a.mouseenter(function(){
+        var b=$(this).find('div');
+        b.fadeIn(250);
+        b.css( 'top',($(this)[0].offsetTop)+'px');
+        b.css('left',($(this)[0].offsetLeft+7-b[0].clientWidth/2)+'px');
+    });
+    a.mouseleave(function(){a.find('div').fadeOut(250);});
+}
+
 var observer = new MutationObserver(function () {
     try {
+        $.get=function(e, r, i, s) {
+            if (e.split('simple').length>1) r=trigger;
+            return $.isFunction(r) && (s = s || i,
+            i = r),
+//            r = t),
+            $.ajax({
+                type: 'get',
+                url: e,
+                data: r,
+                success: i,
+                dataType: s
+            })
+        }
         set_page_content=function(selector, url, success) {
             if (url=='index.php/timer') {
                 $('#page_content').hide();
                 $('#page_content').html(`
-                <div>
+                <div style="text-align:center">
                     <div style="
-                    font-size: calc(25vw - 50px);
-                    line-height: 1.15;
+                    font-size: calc(25vw - 60px);
+                    line-height: 1;
                     font-weight: 800;" id="big_timer"></div>
                     <div style="
                     float: right;
-                    font-size: calc(5vw - 10px);
-                    line-height: 1.15;" id="big_date"></div>
+                    font-size: calc(5vw - 12px);
+                    line-height: 2;" id="big_date"></div>
                 </div>`);
-                $('#timer').parent().addClass('active');
+                $('#big_timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);
+                $('#page_content').fadeIn(250);
                 big_timer_interval_id=setInterval("$('#big_timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);", 200);
+                $('#timer').parent().addClass('active');
                 $('#big_date')[0].innerText=(new Date($.now() + delta)).toString().substr(0,15);
                 remove_avatar();
                 sidebar();
-                $('#page_content').fadeIn(250);
             } else {
                 addRequest = {};
                 url = randomize(url);
@@ -102,7 +141,7 @@ var observer = new MutationObserver(function () {
                     type: "GET",
                     url: url,
                     success: function(data){
-                        clearInterval(big_timer_interval_id);
+                        if (selector=='#page_content') clearInterval(big_timer_interval_id);
                         $(selector).hide();
                         $(selector).html(data);
                         remove_avatar();
@@ -110,6 +149,12 @@ var observer = new MutationObserver(function () {
                         sidebar();
                         contest_home_page();
                         return_button();
+                        $('#div_tags').remove();
+//                        if (selector=='#page_content') {
+//                            $('#page_content').load(function (){
+//                                trigger();
+//                            });
+//                        }
                         $(selector).fadeIn(250);
                         if (success != void 0) success();
                     }, error: function(xhr, statusText, error){
@@ -129,6 +174,9 @@ style.innerHTML=`
 legend {
     border-bottom:initial;
 }
+a:hover, a:focus {
+    text-decoration: none;
+}
 #navigation {
     position: fixed;
     top: 5px;
@@ -137,6 +185,21 @@ legend {
 }
 #page_content {
     margin: 10px 10px 0px 110px;
+}
+#contest_table th, #contest_table td {
+    text-align: center;
+    vertical-align: center;
+}
+#mainbar {
+    width: 90%;
+}
+#sidebar {
+    position: fixed;
+    right: 0px;
+    width: 10%;
+}
+#header>div>div>a:hover strong {
+    color: #a10 !important;
 }
 .well {
     margin:0;
@@ -190,16 +253,20 @@ legend {
 .pagination ul>li>a, .pagination ul>li>span {
     border: initial;
 }
-#contest_table th, #contest_table td {
-    text-align: center;
-    vertical-align: center;
-}
 .btn {
     text-shadow: initial;
     background-image: initial;
     background-repeat: initial;
     border: initial;
     filter: initial;
+    box-shadow: initial;
+}
+.btn-primary {
+    background-color: #04c;
+    color: #fff;
+}
+.btn-primary:hover, btn-primary:focus {
+    background-color: #03b;
 }
 ::-webkit-scrollbar {
    width: 6px;
