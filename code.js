@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ModernGMOJ
-// @version      1.4.2
+// @version      1.4.3
 // @namespace    https://gmoj.net/
 // @match        https://gmoj.net/*
 // @icon         https://gmoj.net/favicon.ico
@@ -10,70 +10,62 @@
 
 'use strict';
 
-var big_timer_interval_id;
+var domparser=new DOMParser();
+
+var big_timer_exist=0,big_timer_interval_id=0;
 function make_timer() {
-    if ($('#timer').length==0) {
+    if ($('#timer').length==0&&$('#navigation').length>0) {
         var li=document.createElement('li'),a=document.createElement('a');
+        li.className='nav_bar';
         a.href='#timer';
         a.id='timer';
         li.appendChild(a);
-        li.className='nav_bar';
         $('#navigation')[0].appendChild(li);
-        $('#timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);
-        $('#timer').click( function() {
+//        $('#navigation')[0].appendChild(domparser.parseFromString(
+//            '<li class="nav_bar"><a href="#timer" id="timer"></a></li>',
+//            'application/xml').firstChild);
+        $('#timer').text((new Date($.now() + delta)).toString().substr(16,8));
+        $('#timer').click(function() {
             $('#navigation li').removeClass('active');
             $(this).parent().addClass('active');
         });
-        setInterval("$('#timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);", 200);
+        setInterval('$("#timer").html((new Date($.now() + delta)).toString().substr(16,8))',500);
     }
 }
 
 function remove_avatar() {
-    var avatar=$('#username>div>img');
-    if (avatar.length>0)
-        avatar[0].onerror=function(event){this.parentElement.remove();};
+    $('#username>div>img').error(function() {
+        $(this).parent().remove();
+    });
 }
 
 function sidebar() {
     $(` #nav_home, #nav_task, #nav_group, #nav_ranklist, #nav_admin,
-    #scroll_tip,
+    #scroll_tip, #nav_toggle,
     #copyleft`).remove();
     document.body.appendChild($('#navigation')[0]);
-    $('#nav_toggle').toggle(function() {
-            $('#navigation').animate({ left: '-100px' }, 320);
-            $('#page_content').animate({ 'margin-left': '10px' }, 320);
-            $('#icon_nav_toggle').removeClass();
-            $('#icon_nav_toggle').addClass('icon-arrow-right');
-            }, function() {
-            $('#navigation').animate({ left: '0px' }, 320);
-            $('#page_content').animate({ 'margin-left': '110px' }, 320);
-            $('#icon_nav_toggle').removeClass();
-            $('#icon_nav_toggle').addClass('icon-arrow-left');
-            });
-    $('#nav_toggle')[0].style.top='270px';
-    $('#nav_toggle')[0].style.left='3px';
 }
 
 function contest_home_page() {
-    var tr=$('#contest_table tr');
-    for (var i=0; i<tr.length; i++)
-        tr[i].children[7].remove(),
-        tr[i].children[4].remove(),
-        tr[i].children[2].remove();
+    $(`#contest_table th:nth-child(8),
+       #contest_table td:nth-child(8),
+       #contest_table th:nth-child(5),
+       #contest_table td:nth-child(5),
+       #contest_table th:nth-child(3),
+       #contest_table td:nth-child(3)`).remove();
 }
 
 function return_button() {
     var dirname=document.location.hash.split('/');
     if (dirname.length>2&&dirname[0]=='#main'&&dirname[1]=='statistic') {
-        $('#page_content>button')[0].onclick=function(){
+        $('#page_content>button').click(function() {
             document.location.hash='#main/show/'+dirname[2];
-        };
+        });
     }
 }
 
 function trigger(data) {
     var a=$('#trigger');
-//    a.popover('destroy');
     var x=`<div style="position: absolute; display: none;"><div style="
             max-height: 200px;
             overflow-y: auto;
@@ -83,11 +75,13 @@ function trigger(data) {
             color: #333;
             border-radius: 4px;
             box-shadow: 0px 0px 3px rgba(0,0,0,0.2);">`
-        +data.replace(new RegExp('(Case [0-9]*<br />)*$'),'</div></div>');
+        +data.replace(new RegExp('(Case [0-9]*<br />)*$'),'</div></div>').
+        replace(/Case [0-9]+/g,'<b style="display: inline-block; margin-top: 6px;">$&</b>');
     a.each(function(){
-//        $.get('index.php/'+$(this).parent()[0].href.split('#')[1]+'?simple',function(data){
         $(this)[0].innerHTML+=x;
         $(this).parent()[0].removeAttribute('href');
+        $(this).find('.label.label-info').css('float','right');
+        $(this).find('.label.label-info').css('margin-left','2px');
     });
     a.mouseenter(function(){
         var b=$(this).find('div');
@@ -102,9 +96,7 @@ var observer = new MutationObserver(function () {
     try {
         $.get=function(e, r, i, s) {
             if (e.split('simple').length>1) r=trigger;
-            return $.isFunction(r) && (s = s || i,
-            i = r),
-//            r = t),
+            return $.isFunction(r) && (s = s || i, i = r),
             $.ajax({
                 type: 'get',
                 url: e,
@@ -116,8 +108,9 @@ var observer = new MutationObserver(function () {
         set_page_content=function(selector, url, success) {
             if (url=='index.php/timer') {
                 $('#page_content').hide();
+                make_timer();
                 $('#page_content').html(`
-                <div style="text-align:center">
+                <div style="text-align:center; overflow: visible">
                     <div style="
                     font-size: calc(25vw - 60px);
                     line-height: 1;
@@ -128,11 +121,11 @@ var observer = new MutationObserver(function () {
                     line-height: 2;" id="big_date"></div>
                 </div>`);
                 $('#big_timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);
-                $('#page_content').fadeIn(250);
-                big_timer_interval_id=setInterval("$('#big_timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);", 200);
+                big_timer_interval_id=setInterval("$('#big_timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);", 500);
+                big_timer_exist=1;
                 $('#timer').parent().addClass('active');
                 $('#big_date')[0].innerText=(new Date($.now() + delta)).toString().substr(0,15);
-                remove_avatar();
+                $('#page_content').fadeIn(250);
                 sidebar();
             } else {
                 addRequest = {};
@@ -141,20 +134,23 @@ var observer = new MutationObserver(function () {
                     type: "GET",
                     url: url,
                     success: function(data){
-                        if (selector=='#page_content') clearInterval(big_timer_interval_id);
                         $(selector).hide();
                         $(selector).html(data);
-                        remove_avatar();
-                        make_timer();
-                        sidebar();
-                        contest_home_page();
-                        return_button();
-                        $('#div_tags').remove();
-//                        if (selector=='#page_content') {
-//                            $('#page_content').load(function (){
-//                                trigger();
-//                            });
-//                        }
+                        if (selector=='#page_content') {
+                            if (big_timer_exist) {
+                                clearInterval(big_timer_interval_id);
+                                big_timer_exist=0;
+                            }
+                            make_timer();
+                            sidebar();
+                            contest_home_page();
+                            return_button();
+                            $('#div_tags').remove();
+                        } else {
+                            if (selector=='#userinfo') {
+                                remove_avatar();
+                            }
+                        }
                         $(selector).fadeIn(250);
                         if (success != void 0) success();
                     }, error: function(xhr, statusText, error){
@@ -163,6 +159,13 @@ var observer = new MutationObserver(function () {
                 });
             }
         }
+        if (!scripts_injected) {
+//            $('#markdown_scripts').html(`
+ //               <script src="https://cdn.jsdelivr.net/npm/marked@3.0.0/marked.min.js"></script>
+//                <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>`);
+            scripts_injected=1;
+        }
+//        MathJax = { tex: {inlineMath: [['$', '$'], ['\\(', '\\)']]} };
         observer.disconnect();
     } catch(e) { }
 });
@@ -261,12 +264,16 @@ a:hover, a:focus {
     filter: initial;
     box-shadow: initial;
 }
-.btn-primary {
-    background-color: #04c;
+.btn-primary, .btn-primary:visited {
+    background-color: #04d;
     color: #fff;
+    margin-top: 6px;
 }
 .btn-primary:hover, btn-primary:focus {
-    background-color: #03b;
+    background-color: #03c;
+}
+.input-prepend .add-on, .input-prepend .input-mini, .input-prepend .input-xlarge {
+    border: initial;
 }
 ::-webkit-scrollbar {
    width: 6px;
