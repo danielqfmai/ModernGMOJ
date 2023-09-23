@@ -67,7 +67,7 @@ function return_button() {
 function trigger(data) {
     var a=$('#trigger');
     var x=`<div style="position: absolute; display: none;"><div style="
-            max-height: 200px;
+            max-height: 350px;
             overflow-y: auto;
             margin-top: 16px;
             padding: 10px;
@@ -112,12 +112,12 @@ var observer = new MutationObserver(function () {
                 $('#page_content').html(`
                 <div style="text-align:center; overflow: visible">
                     <div style="
-                    font-size: calc(25vw - 60px);
+                    font-size: calc(25vw - 50px);
                     line-height: 1;
-                    font-weight: 800;" id="big_timer"></div>
+                    font-weight: 700;" id="big_timer"></div>
                     <div style="
                     float: right;
-                    font-size: calc(5vw - 12px);
+                    font-size: calc(5vw - 10px);
                     line-height: 2;" id="big_date"></div>
                 </div>`);
                 $('#big_timer')[0].innerText=(new Date($.now() + delta)).toString().substr(16,8);
