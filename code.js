@@ -67,7 +67,7 @@ function return_button() {
 function trigger(data) {
     var a=$('#trigger');
     var x=`<div style="position: absolute; display: none;"><div style="
-            max-height: 200px;
+            max-height: 350px;
             overflow-y: auto;
             margin-top: 16px;
             padding: 10px;
