@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         ModernGMOJ
-// @version      1.5.0
+// @version      1.5.1
 // @namespace    https://gmoj.net/
 // @match        https://gmoj.net/*
 // @icon         https://gmoj.net/favicon.ico

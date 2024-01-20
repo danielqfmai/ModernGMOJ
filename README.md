@@ -1,4 +1,4 @@
-# ModernGMOJ v1.5
+# ModernGMOJ v1.5.1
 #### [更新日志](changelog.md)
 由于 ~~我英语太菜~~ 用户全是中国人，所以这篇 readme 用中文写。
 ## 使用方法
