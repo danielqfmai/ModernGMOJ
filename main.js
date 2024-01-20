@@ -75,94 +75,81 @@ function trigger(data) {
 }
 
 function contest_saver() {
-    if (location.hash.split("#contest/home/").length>1)
+    if (location.hash.split("#contest/home/").length>1
+            && $("div.hero-unit").length)
         $("div.hero-unit")[0].innerHTML +=
-      `<button class="btn btn-primary" onclick="
-          async function main() {
-              const parser = new DOMParser();
-              const lct = location;
-              var doc = '# ';
-              var imgcnt = 0;
-              var dijing = [];
-              const dirHandle = await showDirectoryPicker()
-                  .catch((e) => {});
-              if (!dirHandle) return;
-              await $.ajax({ url: lct.pathname + 'index.php/contest/home/' + lct.hash.split('/')[2],
-                  success: (data) => {
-                      var ele = parser.parseFromString(data, 'text/html');
-                      doc += ele.querySelector('h2').innerText;
-                  }
-              });
-              async function download(url,name,handle) {
-                  const response = await fetch(url);
-                  const newFileHandle = await handle.getFileHandle(name, { create: true });
-                  const writable = await newFileHandle.createWritable();
-                  await response.body.pipeTo(writable);
-              }
-              async function detailed_limits(z,id) {
-                  const problemDirHandle = await dirHandle.getDirectoryHandle(String(id), { create: true });
-                  download(lct.pathname + z.split('#')[1] + '?simple', 'detailed_limits.html', problemDirHandle);
-                  await $.ajax({ url: lct.pathname + 'index.php/main/showdownload/' + z.split('limits/')[1],
-                      success: (data) => {
-                          console.log(data);
-                          var ele = parser.parseFromString(data, 'text/html');
-                          tmp = ele.querySelectorAll('a');
-                          for (var i = 0; i < tmp.length; ++i)
-                              download(tmp[i].href, '(' + String(i) + ')' + tmp[i].innerText, problemDirHandle);
-                      }
-                  });
-              }
-              for (var i = 0, flg = 1; flg; ++i) {
-                flg = 0;
-                  await $.ajax({ url: lct.pathname + 'index.php/contest/show/' + lct.hash.split('/')[2] + '/' + String(i),
-                      success: (data) => {
-                          var ele = parser.parseFromString(data, 'text/html');
-                          if (!ele.querySelector('div.row-fluid')) return;
-                          flg = 1;
-                          var title = ele.querySelector('div.row-fluid > div > h2').innerText
-                          doc += '\\n## ' + title;
-                          var tmp = ele.querySelectorAll('div.row-fluid > div > div > span > span');
-                          doc += '\\n' + tmp[0].innerText + ', ' + tmp[1].innerText;
-                          ele.querySelectorAll('div.row-fluid > div > div > span.label').forEach(
-                              (label) => { doc += ', ' + label.innerText; });
-                          tmp=ele.querySelectorAll('div.row-fluid > div > h4 > span');
-                          if (tmp.length) doc += '\\n\\nInput : \`' + tmp[0].innerText
-                              + '\`\\n\\nOutput : \`' + tmp[1].innerText + '\`';
-                          detailed_limits(ele.querySelector('#link_limits').href,i);
-                          try { tmp = ele.querySelectorAll('#mainbar > script');
-                              eval(tmp[tmp.length - 1].innerText + 'md = rawMarkdown;');
-                              for (var part in md) if (md[part] != '') {
-                                  var x = md[part].split(/!\\[.*\\]\\(/g);
-                                  for (var j = 1; j < x.length; ++j) {
-                                      var y = x[j].split(')');
-                                      download(y[0],String(imgcnt) + '.png',dirHandle);
-                                      y[0] = String(imgcnt) + '.png';
-                                      ++imgcnt;
-                                      x[j] = y.join(')');
-                                  }
-                                  doc += '\\n### ' + String(part) + '\\n' + x.join('![](');
-                              }
-                              tmp = ele.querySelectorAll('div.div_samplecase_plaintext > div');
-                              if (tmp.length) {
-                                  doc += '\\n### Samples';
-                                  tmp.forEach((sample) => { doc += '\\n#### ' + sample.children[0].children[0].innerText
-                                      + '\\n\`\`\`\\n' + sample.children[1].innerText + '\\n\`\`\`'; });
-                              }
-                          }
-                          catch (error) {
-                              alert('请手动保存 ' + title + ' 的题面，你可以在控制台（按 F12）中看到题目名称');
-                              dijing.push(title);
-                          }
-                      }
-                  });
-              }
-              const docHandle = await dirHandle.getFileHandle('statements.md', { create: true });
-              const writable = await docHandle.createWritable();
-              writable.write(doc);
-              writable.close();
-              console.log(dijing);
-          }
-          main();">Save Contest</button>`;
+        `<button class="btn btn-primary" onclick="
+            'use strict';
+            const contestid = location.hash.split('/')[2];
+            const parser = new DOMParser();
+            var dirHandle;
+            var imgcnt = 0;
+            async function download(url,name,dir) {
+                const tmp = await Promise.all([fetch(url),
+                  (await dir.getFileHandle(name, { create: true })).createWritable()]);
+                await tmp[0].body.pipeTo(tmp[1]);
+            }
+            async function get_problem(i) {
+                var tmp = await fetch(location.pathname + 'index.php/contest/show/' + contestid + '/' + String(i));
+                const ele = parser.parseFromString(await tmp.text(), 'text/html');
+                const title = ele.querySelector('div.row-fluid > div > h2').innerText;
+                var res = '## ' + title;
+                tmp = ele.querySelectorAll('div.row-fluid > div > div > span > span');
+                res += '\\n' + tmp[0].innerText + ', ' + tmp[1].innerText;
+                ele.querySelectorAll('div.row-fluid > div > div > span.label').forEach(
+                    label => res += ', ' + label.innerText );
+                tmp = ele.querySelectorAll('div.row-fluid > div > h4 > span');
+                if (tmp.length) res += '\\n\\nInput : \`' + tmp[0].innerText
+                    + '\`\\n\\nOutput : \`' + tmp[1].innerText + '\`';
+                const href = ele.querySelector('#link_limits').href;
+                const problemDirHandle = await dirHandle.getDirectoryHandle(String(i), { create: true });
+                download(location.pathname + 'index.php/' + href.split('#')[1] + '?simple', 'detailed_limits.html', problemDirHandle);
+                tmp = await fetch(location.pathname + 'index.php/main/showdownload/' + href.split('limits/')[1]);
+                if (tmp.ok) {
+                    const e = parser.parseFromString(await tmp.text(), 'text/html');
+                    const a = e.querySelectorAll('a');
+                    for (var i = 0; i < a.length; ++i)
+                        download(a[i].href, '(' + String(i) + ')' + a[i].innerText, problemDirHandle);
+                }
+                tmp = ele.querySelectorAll('#mainbar > script');
+                const md = eval(tmp[tmp.length - 1].innerText + 'rawMarkdown;');
+                for (var part in md) if (md[part] != '') {
+                    var x = md[part].split(/!\\[.*\\]\\(/g);
+                    for (var j = 1; j < x.length; ++j) {
+                        var y = x[j].split(')');
+                        download(y[0],String(imgcnt) + '.png',dirHandle);
+                        y[0] = String(imgcnt) + '.png';
+                        ++imgcnt;
+                        x[j] = y.join(')');
+                    }
+                    res += '\\n### ' + String(part) + '\\n' + x.join('![](');
+                }
+                tmp = ele.querySelectorAll('div.div_samplecase_plaintext > div');
+                if (tmp.length) {
+                    res += '\\n### Samples';
+                    tmp.forEach(sample => res += '\\n#### ' + sample.children[0].children[0].innerText
+                        + '\\n\`\`\`\\n' + sample.children[1].innerText + '\\n\`\`\`');
+                }
+                return res;
+            }
+            async function main() {
+                try {
+                    dirHandle = await showDirectoryPicker();
+                    var tmp = await fetch(location.pathname + 'index.php/contest/problems/' + contestid);
+                    var ele = parser.parseFromString(await tmp.text(), 'text/html');
+                    var num = ele.querySelectorAll('tbody > tr').length;
+                    var promises = []
+                    for (var i = 0; i < num; ++i) promises.push(get_problem(i));
+                    const problems = await Promise.all(promises);
+                    const docHandle = await dirHandle.getFileHandle('statements.md', { create: true });
+                    const writable = await docHandle.createWritable();
+                    writable.write('# ' + $('h2')[0].innerText +  '\\n' + problems.join('\\n'));
+                    writable.close();
+                }
+                catch (error) {
+                }
+            }
+            main();">Save Contest</button>`;
 }
 
 var observer = new MutationObserver(() => {
