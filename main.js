@@ -12,15 +12,15 @@
 
 "use strict";
 
-// 0 Chinese 1 English
-var language = GM_getValue('language');
-if (language == undefined) {
-	language = 0;
-	GM_setValue('language', 0);
+var language = localStorage.getItem("language");
+if (language == null) {
+	language = "Chinese";
+	localStorage.setItem("language", "Chinese");
 }
 GM_registerMenuCommand('switch language (reload the page after you click it)', () => {
-	language = !language;
-	GM_setValue('language', language);
+	if(language == "Chinese") language = "English";
+	else language = "Chinese";
+	localStorage.setItem("language", language);
 });
 
 var parser=new DOMParser();
@@ -69,7 +69,7 @@ const mapList = {
 };
 
 function change_word() {
-	if (language == 1) {
+	if (language == "English") {
 		for (const key in mapList) {
 			$(key).html(mapList[key]);
 		}
@@ -219,15 +219,13 @@ function contest_saver() {
 }
 
 function main() {
-	if (selector == "#page_content") {
-		make_timer();
-		sidebar();
-		contest_home_page();
-		return_button();
-		$("#div_tags").remove();
-		contest_saver();
-		change_word();
-	}
+    make_timer();
+    sidebar();
+    contest_home_page();
+    return_button();
+    $("#div_tags").remove();
+    contest_saver();
+    change_word();
 }
 
 var observer = new MutationObserver(() => {
@@ -360,4 +358,3 @@ a:hover, a:focus {
    background-color: #444444;
 }`
 document.head.appendChild(style);
-
