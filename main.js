@@ -12,16 +12,15 @@
 
 "use strict";
 
-// 0 Chinese 1 English
 var language = localStorage.getItem("language");
 if (language == null) {
-	language = "0";
-    localStorage.setItem("language", "0");
+	language = "Chinese";
+	localStorage.setItem("language", "Chinese");
 }
 GM_registerMenuCommand('switch language (reload the page after you click it)', () => {
-	if(language == "0") language = "1";
-    else language = "0";
-    localStorage.setItem("language", language);
+	if(language == "Chinese") language = "English";
+	else language = "Chinese";
+	localStorage.setItem("language", language);
 });
 
 var parser=new DOMParser();
@@ -70,7 +69,7 @@ const mapList = {
 };
 
 function change_word() {
-	if (language == "1") {
+	if (language == "English") {
 		for (const key in mapList) {
 			$(key).html(mapList[key]);
 		}
