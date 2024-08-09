@@ -218,6 +218,16 @@ function contest_saver() {
 			main();">Save Contest</button>`;
 }
 
+function main() {
+	make_timer();
+	sidebar();
+	contest_home_page();
+	return_button();
+	$("#div_tags").remove();
+	contest_saver();
+	change_word();
+}
+
 var observer = new MutationObserver(() => {
 	try { set_page_content = (selector, url, success) => {
 			const jqDom = $(selector).find("#vue-app")
@@ -227,19 +237,16 @@ var observer = new MutationObserver(() => {
 					$(selector).hide();
 					$(selector).html(data);
 					if (selector == "#page_content") {
-						make_timer();
-						sidebar();
-						contest_home_page();
-						return_button();
-						$("#div_tags").remove();
-						contest_saver();
-						change_word();
+						main();
 					}
 					$(selector).fadeIn(250);
 					if (success != void 0) success();
 				},
 				error: (xhr, statusText, error) => {
 					$(selector).html("<div class='alert'><strong>Error: " + error + "</strong></div>");
+					if (selector == "#page_content") {
+						main();
+					}
 				}
 			});
 		}
