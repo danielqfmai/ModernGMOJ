@@ -219,42 +219,42 @@ function contest_saver() {
 }
 
 function main() {
-	make_timer();
-	sidebar();
-	contest_home_page();
-	return_button();
-	$("#div_tags").remove();
-	contest_saver();
-	change_word();
+	if (selector == "#page_content") {
+		make_timer();
+		sidebar();
+		contest_home_page();
+		return_button();
+		$("#div_tags").remove();
+		contest_saver();
+		change_word();
+	}
 }
 
 var observer = new MutationObserver(() => {
-	try { set_page_content = (selector, url, success) => {
-			const jqDom = $(selector).find("#vue-app")
-			jqDom.length && jqDom[0].__vue__.$destroy()
-			$.ajax({ type: "GET", url: url,
-				success: (data) => {
-					$(selector).hide();
-					$(selector).html(data);
-					if (selector == "#page_content") {
-						main();
-					}
-					$(selector).fadeIn(250);
-					if (success != void 0) success();
-				},
-				error: (xhr, statusText, error) => {
-					$(selector).html("<div class='alert'><strong>Error: " + error + "</strong></div>");
-					if (selector == "#page_content") {
-						main();
-					}
+			try {
+				let Origin_set_page_content = set_page_content;
+				set_page_content = (selector, url, success) => {
+					Origin_set_page_content(selector, url, success)
+					const jqDom = $(selector).find("#vue-app")
+					jqDom.length && jqDom[0].__vue__.$destroy()
+					$.ajax({
+						type: "GET",
+						url: url,
+						success: (data) => {
+							if (selector == "#page_content") {
+								main();
+							}
+						},
+						error: (xhr, statusText, error) => {
+							main();
+						}
+					});
 				}
-			});
-		}
-		observer.disconnect();
-	}
-	catch(e) { }
-});
-observer.observe((document.head), { subtree: true, childList: true });
+				observer.disconnect();
+			}
+			catch(e) { }
+		});
+		observer.observe((document.head), { subtree: true, childList: true });
 
 var style = document.createElement("style");
 style.innerHTML=`
