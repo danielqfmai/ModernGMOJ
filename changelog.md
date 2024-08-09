@@ -57,3 +57,5 @@ Timer 终于能点了。
 
 ## 2024.1.20 v1.5.1
 把保存比赛的爬取题面方式异步化（并行化），速度更快。
+## 2024.8.9 v1.6
+增加语言切换功能（感谢 [fydj](https://www.luogu.com.cn/user/793777), [ZnPdCo](https://github.com/ZnPdCo)）。
