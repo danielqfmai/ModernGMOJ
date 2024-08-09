@@ -12,15 +12,15 @@
 
 "use strict";
 
-// 0 Chinese 1 English
-var language = GM_getValue('language');
-if (language == undefined) {
-	language = 0;
-	GM_setValue('language', 0);
+var language = localStorage.getItem("language");
+if (language == null) {
+	language = "Chinese";
+	localStorage.setItem("language", "Chinese");
 }
 GM_registerMenuCommand('switch language (reload the page after you click it)', () => {
-	language = !language;
-	GM_setValue('language', language);
+	if(language == "Chinese") language = "English";
+	else language = "Chinese";
+	localStorage.setItem("language", language);
 });
 
 var parser=new DOMParser();
@@ -69,7 +69,7 @@ const mapList = {
 };
 
 function change_word() {
-	if (language == 1) {
+	if (language == "English") {
 		for (const key in mapList) {
 			$(key).html(mapList[key]);
 		}
@@ -218,36 +218,41 @@ function contest_saver() {
 			main();">Save Contest</button>`;
 }
 
+function main() {
+    make_timer();
+    sidebar();
+    contest_home_page();
+    return_button();
+    $("#div_tags").remove();
+    contest_saver();
+    change_word();
+}
+
 var observer = new MutationObserver(() => {
-	try { set_page_content = (selector, url, success) => {
-			const jqDom = $(selector).find("#vue-app")
-			jqDom.length && jqDom[0].__vue__.$destroy()
-			$.ajax({ type: "GET", url: url,
-				success: (data) => {
-					$(selector).hide();
-					$(selector).html(data);
-					if (selector == "#page_content") {
-						make_timer();
-						sidebar();
-						contest_home_page();
-						return_button();
-						$("#div_tags").remove();
-						contest_saver();
-						change_word();
-					}
-					$(selector).fadeIn(250);
-					if (success != void 0) success();
-				},
-				error: (xhr, statusText, error) => {
-					$(selector).html("<div class='alert'><strong>Error: " + error + "</strong></div>");
+			try {
+				let Origin_set_page_content = set_page_content;
+				set_page_content = (selector, url, success) => {
+					Origin_set_page_content(selector, url, success)
+					const jqDom = $(selector).find("#vue-app")
+					jqDom.length && jqDom[0].__vue__.$destroy()
+					$.ajax({
+						type: "GET",
+						url: url,
+						success: (data) => {
+							if (selector == "#page_content") {
+								main();
+							}
+						},
+						error: (xhr, statusText, error) => {
+							main();
+						}
+					});
 				}
-			});
-		}
-		observer.disconnect();
-	}
-	catch(e) { }
-});
-observer.observe((document.head), { subtree: true, childList: true });
+				observer.disconnect();
+			}
+			catch(e) { }
+		});
+		observer.observe((document.head), { subtree: true, childList: true });
 
 var style = document.createElement("style");
 style.innerHTML=`
@@ -353,4 +358,3 @@ a:hover, a:focus {
    background-color: #444444;
 }`
 document.head.appendChild(style);
-
